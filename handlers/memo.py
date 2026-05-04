@@ -16,6 +16,7 @@ from utils.formatters import (
     discord_preview,
     inject_tags,
 )
+from utils.knowledge_ref import build_knowledge_context
 import config
 
 
@@ -182,10 +183,14 @@ def register_memo_command(
         session.pending_note_id = note_id
         session.pending_path = fleeting_filename
 
+        related = await asyncio.to_thread(knowledge.search, text[:500], 3)
+        knowledge_ctx = build_knowledge_context(related) if related else ""
+
         assistant_text, _ = await claude.chat_with_tools(
             command="memo",
             history=session.history,
             user_message=f"以下のメモについて話しましょう。\n\n{text}",
+            extra_system=knowledge_ctx,
         )
 
         session.pending_content = assistant_text
@@ -210,10 +215,14 @@ async def handle_memo_followup(
         return
 
     async with message.channel.typing():
+        related = await asyncio.to_thread(knowledge.search, message.content[:500], 3)
+        knowledge_ctx = build_knowledge_context(related) if related else ""
+
         assistant_text, _ = await claude.chat_with_tools(
             command="memo",
             history=session.history,
             user_message=message.content,
+            extra_system=knowledge_ctx,
         )
 
     session.pending_content = assistant_text

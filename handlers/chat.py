@@ -132,10 +132,14 @@ async def handle_chat_followup(
         return
 
     async with message.channel.typing():
+        related = await asyncio.to_thread(knowledge.search, message.content[:500], 3)
+        knowledge_ctx = build_knowledge_context(related) if related else ""
+
         assistant_text, _ = await claude.chat_with_tools(
             command="chat",
             history=session.history,
             user_message=message.content,
+            extra_system=knowledge_ctx,
         )
 
     session.pending_content = assistant_text

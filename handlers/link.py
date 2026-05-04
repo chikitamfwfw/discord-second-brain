@@ -12,6 +12,7 @@ from services.knowledge_store import KnowledgeStore
 from services.scraper import fetch_article, ScrapeResult
 from services.youtube_client import get_transcript, TranscriptResult
 from utils.formatters import make_zk_filename, make_zk_id, sanitize_tags, discord_preview, inject_tags
+from utils.knowledge_ref import build_knowledge_context
 import config
 
 YOUTUBE_RE = re.compile(
@@ -181,6 +182,11 @@ async def _handle_youtube(interaction, url, session, github, knowledge, claude):
     session.references.append(url)
     session.raw_content = result.transcript
 
+    related = await asyncio.to_thread(
+        knowledge.search, f"{result.title} {result.transcript[:300]}", 3
+    )
+    knowledge_ctx = build_knowledge_context(related) if related else ""
+
     method_label = "字幕" if result.method == "api" else "Whisper書き起こし"
     user_message = (
         f"以下のYouTube動画の書き起こしを共有します。\n\n"
@@ -193,6 +199,7 @@ async def _handle_youtube(interaction, url, session, github, knowledge, claude):
         command="link",
         history=session.history,
         user_message=user_message,
+        extra_system=knowledge_ctx,
     )
 
     session.pending_content = assistant_text
@@ -225,8 +232,14 @@ async def _handle_article(interaction, url, session, github, knowledge, claude):
     session.pending_path = f"{config.ARTICLES_PATH}/{make_zk_filename(dt)}"
     session.references.append(url)
 
+    related = await asyncio.to_thread(
+        knowledge.search, f"{scrape.title} {scrape.text[:300]}", 3
+    )
+    knowledge_ctx = build_knowledge_context(related) if related else ""
+
+    page_info = f"（{scrape.page_count}ページ分取得）" if scrape.page_count > 1 else ""
     user_message = (
-        f"以下の記事を読みました。\n\n"
+        f"以下の記事を読みました。{page_info}\n\n"
         f"**タイトル:** {scrape.title}\n"
         f"**URL:** {url}\n\n"
         f"**本文:**\n{scrape.text[:8000]}"
@@ -235,12 +248,13 @@ async def _handle_article(interaction, url, session, github, knowledge, claude):
         command="link",
         history=session.history,
         user_message=user_message,
+        extra_system=knowledge_ctx,
     )
 
     session.pending_content = assistant_text
     view = LinkSaveView(github=github, knowledge=knowledge, claude=claude, channel_id=interaction.channel_id)
     await interaction.followup.send(
-        f"📰 **{scrape.title}**\n\n{discord_preview(assistant_text)}\n\n"
+        f"📰 **{scrape.title}**{page_info}\n\n{discord_preview(assistant_text)}\n\n"
         "💬 続けて話しかけられます。[💾 保存] で会話をノートに整理します。",
         view=view,
     )
@@ -257,10 +271,14 @@ async def handle_link_followup(
         return
 
     async with message.channel.typing():
+        related = await asyncio.to_thread(knowledge.search, message.content[:500], 3)
+        knowledge_ctx = build_knowledge_context(related) if related else ""
+
         assistant_text, _ = await claude.chat_with_tools(
             command="link",
             history=session.history,
             user_message=message.content,
+            extra_system=knowledge_ctx,
         )
 
     session.pending_content = assistant_text

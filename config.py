@@ -31,6 +31,8 @@ YOUTUBE_PATH: str = "10-notes/literature/youtube"
 PERMANENT_PATH: str = "10-notes/permanent"
 RESEARCH_PATH: str = "20-research"
 PLANNING_PATH: str = "30-planning"
+COOKIES_FILE: str = os.getenv("COOKIES_FILE", "")
+
 SYSTEM_PROMPT_PATH: str = "_config/system-prompt.md"
 PROMPTS_PATH: str = "_config/prompts"
 TEMPLATES_PATH: str = "_templates"
