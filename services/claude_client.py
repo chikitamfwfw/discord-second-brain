@@ -166,10 +166,16 @@ class ClaudeClient:
                 "会話に登場した情報のみ使用し、創作は加えないでください。"
                 "テンプレートのプレースホルダーに対応する情報が会話中に見つからない場合は「不明」と記入してください。"
                 "参照（references）は「- [タイトル](URL) — 概要一行」の形式で列挙してください。"
+                "出力は必ず '---' で始まるYAMLフロントマターから開始し、前置きや説明文は一切つけないでください。"
             ),
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.content[0].text
+        text = response.content[0].text
+        # Claudeが前置き文を追加した場合、最初の --- から始まるよう切り詰める
+        idx = text.find("---")
+        if idx > 0:
+            text = text[idx:]
+        return text
 
     async def _build_system(self, command: str, extra: str) -> str:
         parts = []

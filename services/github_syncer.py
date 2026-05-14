@@ -22,9 +22,9 @@ _NOTE_DIRS = [
     config.PLANNING_PATH,
 ]
 
-# \r\n / \n 両対応
+# \r\n / \n 両対応、ファイル内の任意の位置にあるフロントマターを検索
 _FRONTMATTER_RE = re.compile(
-    r"^---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL
+    r"---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL
 )
 
 _TYPE_TO_COMMAND = {
@@ -40,15 +40,16 @@ _TYPE_TO_COMMAND = {
 def _parse_frontmatter(content: str) -> dict[str, str]:
     # BOM を除去してから照合
     content = content.lstrip("﻿")
-    m = _FRONTMATTER_RE.match(content)
-    if not m:
-        return {}
-    fields: dict[str, str] = {}
-    for line in m.group(1).splitlines():
-        kv = re.match(r"^([\w_-]+):\s*(.*)", line)
-        if kv:
-            fields[kv.group(1)] = kv.group(2).strip()
-    return fields
+    # id フィールドを持つフロントマターブロックを探す（二重ブロック対策）
+    for m in _FRONTMATTER_RE.finditer(content):
+        fields: dict[str, str] = {}
+        for line in m.group(1).splitlines():
+            kv = re.match(r"^([\w_-]+):\s*(.*)", line)
+            if kv:
+                fields[kv.group(1)] = kv.group(2).strip()
+        if "id" in fields:
+            return fields
+    return {}
 
 
 def _parse_tags(raw: str) -> list[str]:
