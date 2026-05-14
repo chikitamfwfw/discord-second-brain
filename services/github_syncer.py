@@ -22,7 +22,11 @@ _NOTE_DIRS = [
     config.PLANNING_PATH,
 ]
 
-_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
+# \r\n / \n 両対応
+_FRONTMATTER_RE = re.compile(
+    r"^---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL
+)
+
 _TYPE_TO_COMMAND = {
     "fleeting": "memo",
     "literature/article": "link",
@@ -34,6 +38,8 @@ _TYPE_TO_COMMAND = {
 
 
 def _parse_frontmatter(content: str) -> dict[str, str]:
+    # BOM を除去してから照合
+    content = content.lstrip("﻿")
     m = _FRONTMATTER_RE.match(content)
     if not m:
         return {}
@@ -66,14 +72,17 @@ def sync_once(github: GitHubClient, knowledge: KnowledgeStore) -> int:
             print(f"[SYNC] list error {directory}: {e}")
             continue
 
-        for item in items:
-            if not item.name.endswith(".md"):
-                continue
+        md_files = [item for item in items if item.name.endswith(".md")]
+        if md_files:
+            print(f"[SYNC] {directory}: {len(md_files)} .md file(s) found")
+
+        for item in md_files:
             try:
                 content = github.read_file(item.path, use_cache=False)
                 fm = _parse_frontmatter(content)
                 note_id = fm.get("id", "")
                 if not note_id:
+                    print(f"[SYNC] skip {item.path}: no 'id' in frontmatter (keys={list(fm.keys())})")
                     continue
                 command = _TYPE_TO_COMMAND.get(fm.get("type", ""), "memo")
                 tags = _parse_tags(fm.get("tags", ""))
@@ -84,6 +93,7 @@ def sync_once(github: GitHubClient, knowledge: KnowledgeStore) -> int:
                     file_path=item.path,
                     tags=tags,
                 )
+                print(f"[SYNC] upserted {note_id} ({item.path})")
                 total += 1
             except Exception as e:
                 print(f"[SYNC] skip {item.path}: {e}")
@@ -97,6 +107,6 @@ async def run_sync_loop(github: GitHubClient, knowledge: KnowledgeStore) -> None
         await asyncio.sleep(SYNC_INTERVAL_SECONDS)
         try:
             n = await asyncio.to_thread(sync_once, github, knowledge)
-            print(f"[SYNC] periodic sync: {n} notes upserted")
+            print(f"[SYNC] periodic sync done: {n} notes upserted")
         except Exception as e:
             print(f"[SYNC] periodic sync failed: {e}")
