@@ -26,4 +26,7 @@ async def send_chunked(
         if is_last and suffix:
             content += f"\n\n{suffix}"
 
-        await sendable.send(content, view=view if is_last else None)
+        kwargs = {}
+        if is_last and view is not None:
+            kwargs["view"] = view
+        await sendable.send(content, **kwargs)
