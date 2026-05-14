@@ -10,7 +10,7 @@ DISCORD_GUILD_ID: int = int(os.environ["DISCORD_GUILD_ID"])
 # Anthropic
 ANTHROPIC_API_KEY: str = os.environ["ANTHROPIC_API_KEY"]
 
-MODEL_MAIN: str = "claude-sonnet-4-6"
+MODEL_MAIN: str = "claude-opus-4-7"
 MODEL_TAGGING: str = "claude-haiku-4-5-20251001"
 
 # GitHub
