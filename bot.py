@@ -1,9 +1,11 @@
+import asyncio
 import discord
 from discord import app_commands
 import config
 from services.github_client import GitHubClient
 from services.claude_client import ClaudeClient
 from services.knowledge_store import KnowledgeStore
+from services.github_syncer import sync_once, run_sync_loop
 from session.manager import SessionManager
 from handlers.memo import register_memo_command, handle_memo_followup
 from handlers.link import register_link_command, handle_link_followup
@@ -70,6 +72,16 @@ class SecondBrainBot(discord.Client):
 
         await self.tree.sync(guild=guild)
         print(f"[INFO] Slash commands synced to guild {config.DISCORD_GUILD_ID}")
+
+        # 起動時フル同期（GitHub → ChromaDB）
+        try:
+            n = await asyncio.to_thread(sync_once, self.github, self.knowledge)
+            print(f"[SYNC] startup sync done: {n} notes")
+        except Exception as e:
+            print(f"[SYNC] startup sync failed: {e}")
+
+        # 定期同期バックグラウンドタスク（10分ごと）
+        asyncio.create_task(run_sync_loop(self.github, self.knowledge))
 
     async def on_ready(self) -> None:
         print(f"[INFO] Logged in as {self.user} ({self.user.id})")
