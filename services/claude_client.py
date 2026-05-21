@@ -1,7 +1,7 @@
 from __future__ import annotations
 import asyncio
 import anthropic
-from services.github_client import GitHubClient
+from services.vault import Vault
 import config
 
 # Anthropic公式のサーバーサイドWeb検索ツール（Claude.aiと同じ検索エンジン）
@@ -13,9 +13,9 @@ _WEB_SEARCH_TOOL = {
 
 
 class ClaudeClient:
-    def __init__(self, github: GitHubClient) -> None:
+    def __init__(self, vault: Vault) -> None:
         self._client = anthropic.AsyncAnthropic(api_key=config.ANTHROPIC_API_KEY)
-        self._github = github
+        self._vault = vault
 
     async def chat(
         self,
@@ -180,19 +180,19 @@ class ClaudeClient:
     async def _build_system(self, command: str, extra: str) -> str:
         parts = []
         try:
-            parts.append(await asyncio.to_thread(self._github.read_system_prompt))
+            parts.append(await asyncio.to_thread(self._vault.read_system_prompt))
         except FileNotFoundError:
             parts.append("You are a helpful knowledge management assistant.")
 
         try:
-            profile = await asyncio.to_thread(self._github.read_user_profile)
+            profile = await asyncio.to_thread(self._vault.read_user_profile)
             if profile.strip():
                 parts.append(f"## ユーザープロファイル\n\n{profile}")
         except FileNotFoundError:
             pass
 
         try:
-            parts.append(await asyncio.to_thread(self._github.read_prompt, command))
+            parts.append(await asyncio.to_thread(self._vault.read_prompt, command))
         except FileNotFoundError:
             pass
 

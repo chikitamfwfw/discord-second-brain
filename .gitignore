@@ -19,6 +19,9 @@ env/
 # ChromaDB local data
 chroma_db/
 
+# 永続セッションストア
+.brain/
+
 # IDE
 .vscode/
 .idea/

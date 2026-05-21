@@ -1,0 +1,69 @@
+{
+  "name": "second-brain",
+  "displayName": "Second Brain",
+  "description": "VSCode から Second Brain（セカンドブレイン）を操作する",
+  "version": "0.1.0",
+  "publisher": "chikitamfwfw",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "secondBrain.memo", "title": "Second Brain: メモ" },
+      { "command": "secondBrain.link", "title": "Second Brain: リンク取り込み" },
+      { "command": "secondBrain.research", "title": "Second Brain: リサーチ" },
+      { "command": "secondBrain.planning", "title": "Second Brain: プランニング" },
+      { "command": "secondBrain.chat", "title": "Second Brain: チャット" },
+      { "command": "secondBrain.search", "title": "Second Brain: 検索" },
+      { "command": "secondBrain.sync", "title": "Second Brain: 同期" },
+      { "command": "secondBrain.taskAdd", "title": "Second Brain: タスク追加", "icon": "$(add)" },
+      { "command": "secondBrain.tasksRefresh", "title": "Second Brain: タスク一覧更新", "icon": "$(refresh)" },
+      { "command": "secondBrain.taskDone", "title": "Second Brain: タスク完了" },
+      { "command": "secondBrain.taskOpen", "title": "Second Brain: タスクを開く" }
+    ],
+    "views": {
+      "explorer": [
+        { "id": "secondBrainTasks", "name": "Second Brain タスク" }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        { "command": "secondBrain.taskAdd", "when": "view == secondBrainTasks", "group": "navigation" },
+        { "command": "secondBrain.tasksRefresh", "when": "view == secondBrainTasks", "group": "navigation" }
+      ],
+      "view/item/context": [
+        { "command": "secondBrain.taskDone", "when": "view == secondBrainTasks", "group": "inline" }
+      ]
+    },
+    "configuration": {
+      "title": "Second Brain",
+      "properties": {
+        "secondBrain.enginePath": {
+          "type": "string",
+          "default": "",
+          "description": "digital-brain エンジンのディレクトリ（cli.py / daemon.py がある場所）。空の場合はワークスペース隣接の digital-brain / discord-second-brain を探索。"
+        },
+        "secondBrain.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python 実行パス"
+        },
+        "secondBrain.daemonUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8765",
+          "description": "常駐エンジン（デーモン）の URL"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}
