@@ -116,6 +116,26 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("session", help="セッション詳細")
     p.add_argument("session_id")
 
+    # task サブコマンド群（GitHub Issue / Projects v2）
+    tp = sub.add_parser("task", help="タスク操作（GitHub Issue / Projects v2）")
+    tsub = tp.add_subparsers(dest="task_cmd", required=True)
+    ta = tsub.add_parser("add", help="タスクを作成")
+    ta.add_argument("title")
+    ta.add_argument("--body", default="")
+    ta.add_argument("--project", default=None, help="紐づけるプロジェクト/テーマ")
+    ta.add_argument("--note", default=None, help="紐づける ZK ノートの ID/パス")
+    ta.add_argument("--label", action="append", default=[])
+    tl = tsub.add_parser("list", help="タスク一覧")
+    tl.add_argument("--status", choices=["Todo", "In Progress", "Done"], default=None)
+    tl.add_argument("--project", default=None)
+    ts = tsub.add_parser("show", help="タスク詳細")
+    ts.add_argument("number", type=int)
+    tu = tsub.add_parser("update", help="タスクの Status を更新")
+    tu.add_argument("number", type=int)
+    tu.add_argument("status", choices=["Todo", "In Progress", "Done"])
+    td = tsub.add_parser("done", help="タスクを完了")
+    td.add_argument("number", type=int)
+
     args = parser.parse_args(argv)
     cmd = args.cmd
 
@@ -158,6 +178,23 @@ def main(argv: list[str] | None = None) -> int:
         _print(_call("GET", "/session/list"))
     elif cmd == "session":
         _print(_call("GET", f"/session/get?id={args.session_id}"))
+    elif cmd == "task":
+        tc = args.task_cmd
+        if tc == "add":
+            _print(_call("POST", "/task/add", {
+                "title": args.title, "body": args.body, "project": args.project,
+                "note": args.note, "labels": args.label,
+            }))
+        elif tc == "list":
+            res = _call("POST", "/task/list", {"status": args.status, "project": args.project})
+            for t in res.get("tasks", []):
+                print(f"#{t['number']}  [{t.get('board_status', '?')}]  {t['title']}  {t['url']}")
+        elif tc == "show":
+            _print(_call("GET", f"/task/show?number={args.number}"))
+        elif tc == "update":
+            _print(_call("POST", "/task/update", {"number": args.number, "status": args.status}))
+        elif tc == "done":
+            _print(_call("POST", "/task/done", {"number": args.number}))
     return 0
 
 

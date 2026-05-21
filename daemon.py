@@ -57,6 +57,20 @@ def _route(method: str, path: str, body: dict, query: dict) -> tuple[int, dict]:
         return 200, eng.make_permanent(body["session_id"])
     if method == "POST" and path == "/session/discard":
         return 200, eng.discard(body["session_id"])
+    if method == "POST" and path == "/task/add":
+        return 200, eng.tasks.add(
+            body["title"], body.get("body", ""), body.get("project"),
+            body.get("note"), body.get("labels"),
+        )
+    if method == "POST" and path == "/task/list":
+        return 200, {"tasks": eng.tasks.list(body.get("status"), body.get("project"))}
+    if method == "POST" and path == "/task/update":
+        return 200, eng.tasks.update(int(body["number"]), body["status"])
+    if method == "POST" and path == "/task/done":
+        return 200, eng.tasks.done(int(body["number"]))
+    if method == "GET" and path == "/task/show":
+        return 200, eng.tasks.show(int((query.get("number") or ["0"])[0]))
+
     if method == "GET" and path == "/session/list":
         return 200, {
             "sessions": [

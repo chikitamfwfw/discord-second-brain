@@ -52,6 +52,7 @@ class Engine:
         self.sessions = SessionStore()
         self._knowledge: Any | None = None
         self._claude: Any | None = None
+        self._tasks: Any | None = None
 
     # ── 遅延初期化（埋め込みモデル/Claude クライアントは重いので必要時のみ） ──
     @property
@@ -73,6 +74,14 @@ class Engine:
 
             self._claude = ClaudeClient(vault=self.vault)
         return self._claude
+
+    @property
+    def tasks(self) -> Any:
+        if self._tasks is None:
+            from core.task import TaskService
+
+            self._tasks = TaskService()
+        return self._tasks
 
     def warm_up(self) -> None:
         """デーモン起動時に埋め込みモデルを事前ロードし、以後の操作を高速化する。"""

@@ -28,6 +28,9 @@ TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
 # ── GitHub（タスク管理 = Issues / Projects v2 のみで使用） ──────────────────
 GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
 GITHUB_REPO: str = os.getenv("GITHUB_REPO", "")
+# Projects v2 ボード番号（0 = 未設定なら自動作成）とタイトル
+GITHUB_PROJECT_NUMBER: int = int(os.getenv("GITHUB_PROJECT_NUMBER", "0") or "0")
+GITHUB_PROJECT_TITLE: str = os.getenv("GITHUB_PROJECT_TITLE", "Second Brain Tasks")
 
 # ── 常駐エンジン（デーモン） ────────────────────────────────────────────────
 DAEMON_HOST: str = os.getenv("BRAIN_DAEMON_HOST", "127.0.0.1")
